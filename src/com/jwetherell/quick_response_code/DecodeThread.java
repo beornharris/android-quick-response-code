@@ -42,14 +42,14 @@ final class DecodeThread extends Thread {
     private static final String TAG = DecodeThread.class.getSimpleName();
     public static final String BARCODE_BITMAP = "barcode_bitmap";
 
-    private final IDecoderActivity activity;
+    private final com.jwetherell.quick_response_code.IDecoderActivity activity;
     private final Map<DecodeHintType, Object> hints;
     private final CountDownLatch handlerInitLatch;
 
     private Handler handler;
 
-    DecodeThread(IDecoderActivity activity, Collection<BarcodeFormat> decodeFormats, String characterSet,
-            ResultPointCallback resultPointCallback) {
+    DecodeThread(com.jwetherell.quick_response_code.IDecoderActivity activity, Collection<BarcodeFormat> decodeFormats, String characterSet,
+                 ResultPointCallback resultPointCallback) {
         this.activity = activity;
         handlerInitLatch = new CountDownLatch(1);
         hints = new EnumMap<DecodeHintType, Object>(DecodeHintType.class);

@@ -17,8 +17,8 @@ package com.jwetherell.quick_response_code;
 import java.io.IOException;
 import java.util.Collection;
 
-import com.jwetherell.quick_response_code.R;
 import com.jwetherell.quick_response_code.camera.CameraManager;
+
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.Result;
 import com.google.zxing.ResultPoint;

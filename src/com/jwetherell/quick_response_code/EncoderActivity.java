@@ -44,7 +44,7 @@ public final class EncoderActivity extends Activity {
         setContentView(R.layout.encoder);
 
         // This assumes the view is full screen, which is a good assumption
-        WindowManager manager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        WindowManager manager = (WindowManager) getSystemService(android.content.Context.WINDOW_SERVICE);
         Display display = manager.getDefaultDisplay();
         int width = display.getWidth();
         int height = display.getHeight();

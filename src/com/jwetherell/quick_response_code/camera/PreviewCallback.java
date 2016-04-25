@@ -41,10 +41,10 @@ final class PreviewCallback implements Camera.PreviewCallback {
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-        Point cameraResolution = configManager.getCameraResolution();
+        Camera.Size cameraResolution = configManager.getCameraResolution();
         Handler thePreviewHandler = previewHandler;
         if (thePreviewHandler != null) {
-            Message message = thePreviewHandler.obtainMessage(previewMessage, cameraResolution.x, cameraResolution.y, data);
+            Message message = thePreviewHandler.obtainMessage(previewMessage, cameraResolution.width, cameraResolution.height, data);
             message.sendToTarget();
             previewHandler = null;
         } else {

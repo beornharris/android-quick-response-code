@@ -17,12 +17,14 @@
 package com.jwetherell.quick_response_code.camera;
 
 import java.util.Collection;
+import java.util.List;
 
 import android.content.Context;
 import android.graphics.Point;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.Display;
+import android.view.Surface;
 import android.view.WindowManager;
 
 import com.jwetherell.quick_response_code.data.Preferences;
@@ -39,7 +41,7 @@ public final class CameraConfigurationManager {
 
     private final Context context;
     private Point screenResolution;
-    private Point cameraResolution;
+    private Camera.Size cameraResolution;
 
     public CameraConfigurationManager(Context context) {
         this.context = context;
@@ -52,21 +54,23 @@ public final class CameraConfigurationManager {
         Camera.Parameters parameters = camera.getParameters();
         WindowManager manager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = manager.getDefaultDisplay();
-        int width = display.getWidth();
-        int height = display.getHeight();
-        // We're landscape-only, and have apparently seen issues with display
-        // thinking it's portrait
-        // when waking from sleep. If it's not landscape, assume it's mistaken
-        // and reverse them:
-        if (width < height) {
-            Log.i(TAG, "Display reports portrait orientation; assuming this is incorrect");
-            int temp = width;
-            width = height;
-            height = temp;
+
+        int rotation = display.getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0: degrees = 90; break;
+            case Surface.ROTATION_90: degrees = 0; break;
+            case Surface.ROTATION_180: degrees = 270; break;
+            case Surface.ROTATION_270: degrees = 180; break;
         }
-        screenResolution = new Point(width, height);
+
+        camera.setDisplayOrientation(degrees);
+        screenResolution = new Point();
+        display.getSize(screenResolution);
         Log.i(TAG, "Screen resolution: " + screenResolution);
-        cameraResolution = findBestPreviewSizeValue(parameters, screenResolution, false);
+        //cameraResolution = findBestPreviewSizeValue(parameters, screenResolution, false);
+        cameraResolution = getOptimalPreviewSize(parameters.getSupportedPreviewSizes(), screenResolution.x, screenResolution.y);
+
         Log.i(TAG, "Camera resolution: " + cameraResolution);
     }
 
@@ -84,11 +88,11 @@ public final class CameraConfigurationManager {
             parameters.setFocusMode(focusMode);
         }
 
-        parameters.setPreviewSize(cameraResolution.x, cameraResolution.y);
+        parameters.setPreviewSize(cameraResolution.width, cameraResolution.height);
         camera.setParameters(parameters);
     }
 
-    public Point getCameraResolution() {
+    public Camera.Size getCameraResolution() {
         return cameraResolution;
     }
 
@@ -118,6 +122,41 @@ public final class CameraConfigurationManager {
         }
     }
 
+    /*
+    Ref: http://www.shakedos.com/2015/Aug/26/writing-an-android-portrait-camera-app.html
+     */
+    private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
+        final double ASPECT_TOLERANCE = 0.1;
+        double targetRatio = (double) h / w;
+        if (sizes == null) {
+            return null;
+        }
+        Camera.Size optimalSize = null;
+        double minDiff = Double.MAX_VALUE;
+        int targetHeight = h;
+        for (Camera.Size size : sizes) {
+            double ratio = (double) size.height / size.width;
+            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) {
+                continue;
+            }
+            if (Math.abs(size.height - targetHeight) < minDiff) {
+                optimalSize = size;
+                minDiff = Math.abs(size.height - targetHeight);
+            }
+        }
+        if (optimalSize == null) {
+            minDiff = Double.MAX_VALUE;
+            for (Camera.Size size : sizes) {
+                if (Math.abs(size.height - targetHeight) < minDiff) {
+                    optimalSize = size;
+                    minDiff = Math.abs(size.height - targetHeight);
+                }
+            }
+        }
+        return optimalSize;
+    }
+
+    /*
     private static Point findBestPreviewSizeValue(Camera.Parameters parameters, Point screenResolution, boolean portrait) {
         Point bestSize = null;
         int diff = Integer.MAX_VALUE;
@@ -144,6 +183,7 @@ public final class CameraConfigurationManager {
         }
         return bestSize;
     }
+    */
 
     private static String findSettableValue(Collection<String> supportedValues, String... desiredValues) {
         Log.i(TAG, "Supported values: " + supportedValues);
